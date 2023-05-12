@@ -10,13 +10,24 @@ from django.contrib.auth.models import (
 
 
 class UserManager(BaseUserManager):
-    # use_in_migrations = True
     """Manager for users."""
-
     def create_user(self, email, password=None, **extra_fields):
         """Create, save and return a new user."""
-        user = self.model(email=email, **extra_fields)
-        user.set_password(password)
-        user.save(using=self._db)
+        if not email:
+            raise ValueError('User must have an email address.')
+        user = self.model(email=self.normalize_email(email), **extra_fields) # normalize_email() is a helper function that converts email  1st to lowercase
+        user.set_password(password) # set_password() is a helper function that hashes the password
+        user.save(using=self._db) # save() is a helper function that saves the user to the database
 
-        return user
+
+
+class User(AbstractBaseUser, PermissionsMixin):
+    """User in the system."""
+    email = models.EmailField(max_length=255, unique=True)
+    name = models.CharField(max_length=255)
+    is_active = models.BooleanField(default=True)
+    is_staff = models.BooleanField(default=False)
+
+    objects = UserManager()
+
+    USERNAME_FIELD = 'email'
